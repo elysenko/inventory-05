@@ -1,0 +1,32 @@
+.filters {
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0 var(--space-4);
+}
+
+.filter-grid .field { margin-bottom: var(--space-2); }
+
+.card-title { margin: 0; font-size: var(--text-base); }
+.strong { font-weight: 700; }
+.nowrap { white-space: nowrap; }
+.sub { display: block; font-size: var(--text-xs); }
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 768px) {
+  .col-who { display: none; }
+  .filters { padding: var(--space-4) var(--space-3); }
+}

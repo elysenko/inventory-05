@@ -1,0 +1,183 @@
+<div class="page" data-testid="item-detail-page">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a routerLink="/items">Items</a>
+    <span aria-hidden="true">/</span>
+    <span class="mono">{{ item().sku }}</span>
+  </nav>
+
+  @if (loading()) {
+    <div class="card card-pad stack" data-testid="item-detail-loading">
+      @for (row of [1, 2, 3]; track row) {
+        <div class="skeleton"></div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="card">
+      <div class="state" data-testid="item-detail-error">
+        <span class="state-icon" aria-hidden="true">⚠</span>
+        <h3>We could not load this item</h3>
+        <p>{{ error() }}</p>
+        <a class="btn btn-secondary" routerLink="/items">Back to items</a>
+      </div>
+    </div>
+  } @else {
+    <header class="page-head">
+      <div>
+        <h1>{{ item().name }}</h1>
+        <p>{{ item().description }}</p>
+      </div>
+      <div class="row">
+        @if (auth.isManager()) {
+          <button type="button" class="btn btn-secondary" data-testid="edit-item-button" (click)="openEdit()">
+            Edit item
+          </button>
+        }
+        <a
+          class="btn btn-primary"
+          data-testid="record-movement-button"
+          [routerLink]="['/movements/new']"
+          [queryParams]="{ itemId: item().id }"
+          >Record movement</a
+        >
+      </div>
+    </header>
+
+    @if (isLow()) {
+      <div class="alert alert-warn" role="status" data-testid="item-low-banner">
+        On hand is at or below the reorder threshold — short by {{ shortfall() }} {{ item().unit }}.
+      </div>
+    }
+
+    <section class="grid-auto summary" data-testid="item-summary">
+      <div class="card card-pad stat">
+        <span class="stat-label">On hand</span>
+        <span class="stat-value num">{{ item().totalQty }}</span>
+        <span class="muted">{{ item().unit }} total</span>
+      </div>
+      <div class="card card-pad stat">
+        <span class="stat-label">Reorder at</span>
+        <span class="stat-value num">{{ item().reorderAt }}</span>
+        <span class="muted">threshold</span>
+      </div>
+      <div class="card card-pad stat">
+        <span class="stat-label">Locations</span>
+        <span class="stat-value num">{{ locationsHoldingStock() }}</span>
+        <span class="muted">of {{ breakdown().length }} holding stock</span>
+      </div>
+      <div class="card card-pad stat">
+        <span class="stat-label">SKU</span>
+        <span class="stat-value mono sku">{{ item().sku }}</span>
+        <span class="muted">unit: {{ item().unit }}</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <nav class="tabs" aria-label="Item detail sections">
+        <a
+          [routerLink]="[]"
+          [queryParams]="{ tab: 'stock' }"
+          queryParamsHandling="merge"
+          [class.active]="tabName() === 'stock'"
+          data-testid="tab-stock"
+          >Stock by location</a
+        >
+        <a
+          [routerLink]="[]"
+          [queryParams]="{ tab: 'movements' }"
+          queryParamsHandling="merge"
+          [class.active]="tabName() === 'movements'"
+          data-testid="tab-movements"
+          >Movement history</a
+        >
+      </nav>
+
+      @if (tabName() === 'stock') {
+        @if (breakdown().length === 0) {
+          <div class="state" data-testid="stock-empty">
+            <span class="state-icon" aria-hidden="true">⌗</span>
+            <h3>No stock recorded anywhere</h3>
+            <p>This item has never been received. Record a movement to bring stock in.</p>
+            <a
+              class="btn btn-primary"
+              [routerLink]="['/movements/new']"
+              [queryParams]="{ itemId: item().id, type: 'IN' }"
+              >Receive stock</a
+            >
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data" data-testid="stock-table">
+              <thead>
+                <tr>
+                  <th scope="col">Location</th>
+                  <th scope="col">Zone code</th>
+                  <th scope="col" class="right">Quantity</th>
+                  <th scope="col" class="col-share">Share</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of breakdown(); track row.id) {
+                  <tr [attr.data-testid]="'stock-row-' + row.locationId">
+                    <td class="strong">{{ row.locationName }}</td>
+                    <td><span class="badge">{{ row.zone }}</span></td>
+                    <td class="right num">{{ row.qty }}</td>
+                    <td class="col-share">
+                      <span class="bar" [style.width.%]="sharePercent(row.qty)"></span>
+                      <span class="muted share-num">{{ sharePercent(row.qty) }}%</span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr data-testid="stock-total-row">
+                  <td colspan="2">Total on hand</td>
+                  <td class="right num">{{ breakdownTotal() }}</td>
+                  <td class="col-share"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        }
+      } @else {
+        @if (itemMovements().length === 0) {
+          <div class="state" data-testid="item-movements-empty">
+            <span class="state-icon" aria-hidden="true">⇄</span>
+            <h3>No movements yet</h3>
+            <p>Every receipt, issue and transfer for this item will appear here.</p>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data" data-testid="item-movements-table">
+              <thead>
+                <tr>
+                  <th scope="col">When</th>
+                  <th scope="col">Type</th>
+                  <th scope="col" class="right">Qty</th>
+                  <th scope="col">Route</th>
+                  <th scope="col" class="col-who">Recorded by</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (movement of itemMovements(); track movement.id) {
+                  <tr [attr.data-testid]="'item-movement-' + movement.id">
+                    <td class="muted nowrap">{{ movement.createdAt | date: 'd MMM, HH:mm' }}</td>
+                    <td><span [class]="typeBadge(movement.type)">{{ movement.type }}</span></td>
+                    <td class="right num strong">{{ movement.qty }}</td>
+                    <td class="nowrap">
+                      {{ movement.fromLocName ?? '—' }} → {{ movement.toLocName ?? '—' }}
+                    </td>
+                    <td class="col-who muted">{{ movement.userEmail }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </section>
+  }
+</div>
+
+@if (modalName() === 'edit-item') {
+  <app-item-form-modal [item]="item()" (dismiss)="closeModal()" (save)="saveItem($event)" />
+}

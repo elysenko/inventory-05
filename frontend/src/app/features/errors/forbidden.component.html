@@ -1,0 +1,16 @@
+<div class="page" data-testid="forbidden-page">
+  <section class="card card-pad forbidden">
+    <span class="code" aria-hidden="true">403</span>
+    <h1>You do not have access to that screen</h1>
+    <p class="muted">
+      Your account is signed in as
+      <span class="badge badge-role">{{ auth.user()?.role ?? 'GUEST' }}</span
+      >. Managers and admins can see the audit log, the low-stock report and item write access.
+      Ask a manager to upgrade your account if you need it.
+    </p>
+    <div class="row actions">
+      <a class="btn btn-primary" routerLink="/items" data-testid="back-to-items">Back to items</a>
+      <a class="btn btn-secondary" routerLink="/movements/new">Record a movement</a>
+    </div>
+  </section>
+</div>

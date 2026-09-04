@@ -1,0 +1,9 @@
+form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-body { flex: 1 1 auto; }
+.field:last-child { margin-bottom: 0; }

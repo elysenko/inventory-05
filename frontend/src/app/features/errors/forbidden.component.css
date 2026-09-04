@@ -1,0 +1,23 @@
+.forbidden {
+  max-width: 520px;
+  margin: var(--space-6) auto;
+  text-align: center;
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+}
+
+.code {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-primary);
+}
+
+.forbidden p { max-width: 44ch; }
+.actions { justify-content: center; }
+
+@media (max-width: 768px) {
+  .actions { flex-direction: column; width: 100%; }
+  .actions .btn { width: 100%; }
+}

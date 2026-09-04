@@ -1,0 +1,98 @@
+<div class="modal-backdrop" (click)="dismiss.emit()">
+  <section
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="item-modal-title"
+    data-testid="item-form-modal"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-head">
+      <h2 id="item-modal-title">{{ editing() ? 'Edit item' : 'New item' }}</h2>
+      <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" (click)="dismiss.emit()">
+        ✕
+      </button>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="modal-body">
+        @if (skuError()) {
+          <div class="alert alert-error" role="alert" data-testid="item-sku-error">
+            {{ skuError() }}
+          </div>
+        }
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="item-sku">SKU</label>
+            <input
+              id="item-sku"
+              type="text"
+              formControlName="sku"
+              placeholder="SKU-1009"
+              data-testid="item-sku"
+              [class.invalid]="invalid('sku')"
+            />
+            @if (invalid('sku')) {
+              <span class="field-error">Use at least 3 letters, digits or dashes.</span>
+            }
+          </div>
+
+          <div class="field">
+            <label for="item-unit">Unit</label>
+            <select id="item-unit" formControlName="unit" data-testid="item-unit">
+              @for (unit of units; track unit) {
+                <option [value]="unit">{{ unit }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="item-name">Name</label>
+          <input
+            id="item-name"
+            type="text"
+            formControlName="name"
+            placeholder="Hex Bolt M8 x 40"
+            data-testid="item-name"
+            [class.invalid]="invalid('name')"
+          />
+          @if (invalid('name')) {
+            <span class="field-error">Give the item a name.</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="item-reorder">Reorder threshold</label>
+          <input
+            id="item-reorder"
+            type="number"
+            min="0"
+            formControlName="reorderAt"
+            data-testid="item-reorder"
+            [class.invalid]="invalid('reorderAt')"
+          />
+          <span class="hint">Flagged as low stock once on-hand falls to or below this number.</span>
+        </div>
+
+        <div class="field">
+          <label for="item-description">Description <span class="muted">(optional)</span></label>
+          <textarea
+            id="item-description"
+            formControlName="description"
+            placeholder="Zinc-plated, grade 8.8"
+            data-testid="item-description"
+          ></textarea>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button type="button" class="btn btn-secondary" (click)="dismiss.emit()">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-testid="item-save">
+          {{ editing() ? 'Save changes' : 'Create item' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

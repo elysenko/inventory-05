@@ -1,0 +1,121 @@
+<div class="page narrow" data-testid="movement-new-page">
+  <div class="page-head">
+    <div>
+      <h1>Record a stock movement</h1>
+      <p>Receipts, issues and transfers all update location balances immediately.</p>
+    </div>
+  </div>
+
+  @if (success()) {
+    <div class="alert alert-success" role="status" data-testid="movement-success">
+      {{ success() }}
+      @if (selectedItem(); as item) {
+        <a [routerLink]="['/items', item.id]">View {{ item.sku }}</a>
+      }
+    </div>
+  }
+  @if (error()) {
+    <div class="alert alert-error" role="alert" data-testid="movement-error">{{ error() }}</div>
+  }
+
+  <section class="card card-pad" data-testid="movement-form">
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="movement-item">Item</label>
+        <select
+          id="movement-item"
+          formControlName="itemId"
+          data-testid="movement-item"
+          [class.invalid]="invalid('itemId')"
+        >
+          <option value="" disabled>Choose an item…</option>
+          @for (item of items(); track item.id) {
+            <option [value]="item.id">{{ item.sku }} — {{ item.name }}</option>
+          }
+        </select>
+        @if (selectedItem(); as item) {
+          <span class="hint">{{ item.totalQty }} {{ item.unit }} on hand across all locations.</span>
+        }
+      </div>
+
+      <fieldset class="type-picker">
+        <legend>Movement type</legend>
+        <div class="type-options" data-testid="movement-type">
+          @for (option of types; track option.value) {
+            <label class="type-option" [class.selected]="movementType() === option.value">
+              <input type="radio" formControlName="type" [value]="option.value" />
+              <span class="type-label">{{ option.label }}</span>
+              <span class="type-code">{{ option.value }}</span>
+            </label>
+          }
+        </div>
+        <span class="hint">{{ typeHint() }}</span>
+      </fieldset>
+
+      <div class="form-grid">
+        @if (needsSource()) {
+          <div class="field">
+            <label for="movement-from">From location</label>
+            <select id="movement-from" formControlName="fromLocId" data-testid="movement-from">
+              <option value="" disabled>Choose a source…</option>
+              @for (location of locations(); track location.id) {
+                <option [value]="location.id">{{ location.name }}</option>
+              }
+            </select>
+            <span class="hint">Available here: {{ availableAtSource() }}</span>
+          </div>
+        }
+
+        @if (needsDestination()) {
+          <div class="field">
+            <label for="movement-to">To location</label>
+            <select id="movement-to" formControlName="toLocId" data-testid="movement-to">
+              <option value="" disabled>Choose a destination…</option>
+              @for (location of locations(); track location.id) {
+                <option [value]="location.id">{{ location.name }}</option>
+              }
+            </select>
+            <span class="hint">Stock is added here.</span>
+          </div>
+        }
+      </div>
+
+      <div class="field">
+        <label for="movement-qty">Quantity</label>
+        <input
+          id="movement-qty"
+          type="number"
+          min="1"
+          formControlName="qty"
+          data-testid="movement-qty"
+          [class.invalid]="invalid('qty')"
+        />
+        @if (invalid('qty')) {
+          <span class="field-error">Enter a whole number of at least 1.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="movement-note">Note <span class="muted">(optional)</span></label>
+        <textarea
+          id="movement-note"
+          formControlName="note"
+          placeholder="PO-4471 delivery, line 3 replenishment…"
+          data-testid="movement-note"
+        ></textarea>
+      </div>
+
+      <div class="actions">
+        <a class="btn btn-secondary" routerLink="/items">Cancel</a>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          data-testid="movement-submit"
+          [disabled]="submitting()"
+        >
+          {{ submitting() ? 'Recording…' : 'Record movement' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

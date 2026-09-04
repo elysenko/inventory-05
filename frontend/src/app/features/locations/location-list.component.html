@@ -1,0 +1,99 @@
+<div class="page" data-testid="locations-page">
+  <div class="page-head">
+    <div>
+      <h1>Storage locations</h1>
+      <p>{{ locations().length }} zones holding {{ totalUnits() }} units in total</p>
+    </div>
+    @if (auth.isManager()) {
+      <button type="button" class="btn btn-primary" data-testid="new-location-button" (click)="openNew()">
+        ＋ New location
+      </button>
+    }
+  </div>
+
+  @if (notice()) {
+    <div class="alert alert-success" role="status" data-testid="locations-notice">{{ notice() }}</div>
+  }
+  @if (error()) {
+    <div class="alert alert-error" role="alert" data-testid="locations-error">{{ error() }}</div>
+  }
+
+  <section class="card" data-testid="locations-list">
+    <div class="card-head">
+      <h2 class="card-title">All locations</h2>
+      <span class="muted">{{ locations().length }} shown</span>
+    </div>
+
+    @if (loading()) {
+      <div class="card-pad stack" data-testid="locations-loading">
+        @for (row of [1, 2, 3]; track row) {
+          <div class="skeleton"></div>
+        }
+      </div>
+    } @else if (locations().length === 0) {
+      <div class="state" data-testid="locations-empty">
+        <span class="state-icon" aria-hidden="true">⌗</span>
+        <h3>No locations yet</h3>
+        <p>Add a zone before receiving stock into the warehouse.</p>
+        @if (auth.isManager()) {
+          <button type="button" class="btn btn-primary" (click)="openNew()">Add the first location</button>
+        }
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="data" data-testid="locations-table">
+          <thead>
+            <tr>
+              <th scope="col">Location</th>
+              <th scope="col">Zone</th>
+              <th scope="col" class="right col-items">Distinct items</th>
+              <th scope="col" class="right">Units on hand</th>
+              @if (auth.isManager()) {
+                <th scope="col" class="right">Actions</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (location of locations(); track location.id) {
+              <tr [attr.data-testid]="'location-row-' + location.id">
+                <td class="strong">{{ location.name }}</td>
+                <td><span class="badge">Zone {{ location.zone }}</span></td>
+                <td class="right num muted col-items">{{ location.itemCount }}</td>
+                <td class="right num strong">{{ location.totalQty }}</td>
+                @if (auth.isManager()) {
+                  <td class="right actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      [attr.data-testid]="'edit-location-' + location.id"
+                      (click)="openEdit(location)"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm danger"
+                      [attr.data-testid]="'delete-location-' + location.id"
+                      (click)="remove(location)"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (modalName() === 'new-location' || modalName() === 'edit-location') {
+  <app-location-form-modal
+    [location]="modalName() === 'edit-location' ? editing() : null"
+    [takenNames]="takenNames()"
+    (dismiss)="closeModal()"
+    (save)="saveLocation($event)"
+  />
+}

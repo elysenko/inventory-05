@@ -1,0 +1,95 @@
+<!--
+  data-testid="app-ready" is the universal readiness landmark: it enters the DOM only
+  after Angular bootstraps this root component, so the render gate can wait on it to
+  confirm the SPA hydrated (not a blank shell / 404 / failed bundle). Keep it here.
+-->
+<div data-testid="app-ready" class="shell">
+  <header class="topbar" data-testid="app-header">
+    @if (chromeVisible()) {
+      <button
+        type="button"
+        class="icon-btn menu-btn"
+        data-testid="nav-toggle"
+        [attr.aria-expanded]="drawerOpen()"
+        aria-label="Toggle navigation"
+        (click)="toggleDrawer()"
+      >
+        <span aria-hidden="true">{{ drawerOpen() ? '✕' : '☰' }}</span>
+      </button>
+    }
+
+    <a class="brand" routerLink="/items" data-testid="app-brand">
+      <span class="brand-mark" aria-hidden="true">SR</span>
+      <span class="brand-name">StockRoom</span>
+    </a>
+
+    @if (chromeVisible()) {
+      <nav class="desk-nav" aria-label="Main">
+        @for (link of visibleLinks(); track link.path) {
+          <a
+            [routerLink]="link.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: link.path === '/movements' }"
+            >{{ link.label }}</a
+          >
+        }
+      </nav>
+
+      <span class="spacer"></span>
+
+      @if (previewRoles) {
+        <label class="role-switch">
+          <span class="role-switch-label">Preview as</span>
+          <select data-testid="preview-role" aria-label="Preview role" (change)="onPreviewRole($event)">
+            @for (role of previewRoles; track role) {
+              <option [value]="role" [selected]="role === auth.user()?.role">{{ role }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      <div class="user-chip" data-testid="current-user">
+        <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="user-meta">
+          <span class="user-name">{{ auth.user()?.name ?? 'Signed out' }}</span>
+          <span class="badge badge-role">{{ auth.user()?.role ?? 'GUEST' }}</span>
+        </span>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm signout-desktop"
+        data-testid="logout"
+        (click)="auth.logout()"
+      >
+        Sign out
+      </button>
+    } @else {
+      <span class="spacer"></span>
+      <a class="btn btn-ghost btn-sm" routerLink="/login">Sign in</a>
+    }
+  </header>
+
+  @if (chromeVisible() && drawerOpen()) {
+    <div class="drawer-backdrop" (click)="toggleDrawer()"></div>
+    <nav class="drawer" data-testid="mobile-nav" aria-label="Main">
+      @for (link of visibleLinks(); track link.path) {
+        <a [routerLink]="link.path" routerLinkActive="active">
+          <span class="drawer-icon" aria-hidden="true">{{ link.icon }}</span>
+          {{ link.label }}
+        </a>
+      }
+      <button type="button" class="drawer-signout" (click)="auth.logout()">
+        <span class="drawer-icon" aria-hidden="true">⏻</span> Sign out
+      </button>
+    </nav>
+  }
+
+  <main class="content"><router-outlet /></main>
+
+  @if (showFab()) {
+    <a class="fab" routerLink="/movements/new" data-testid="fab-new-movement">
+      <span aria-hidden="true">＋</span> Record movement
+    </a>
+  }
+</div>

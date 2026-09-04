@@ -1,0 +1,63 @@
+<div class="modal-backdrop" (click)="dismiss.emit()">
+  <section
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="location-modal-title"
+    data-testid="location-form-modal"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="modal-head">
+      <h2 id="location-modal-title">{{ editing() ? 'Edit location' : 'New location' }}</h2>
+      <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" (click)="dismiss.emit()">
+        ✕
+      </button>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="modal-body">
+        @if (nameError()) {
+          <div class="alert alert-error" role="alert" data-testid="location-name-error">
+            {{ nameError() }}
+          </div>
+        }
+
+        <div class="field">
+          <label for="location-name">Location name</label>
+          <input
+            id="location-name"
+            type="text"
+            formControlName="name"
+            placeholder="Zone D"
+            data-testid="location-name"
+            [class.invalid]="invalid('name')"
+          />
+          @if (invalid('name')) {
+            <span class="field-error">Give the location a name.</span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="location-zone">Zone code</label>
+          <input
+            id="location-zone"
+            type="text"
+            formControlName="zone"
+            maxlength="4"
+            placeholder="D"
+            data-testid="location-zone"
+            [class.invalid]="invalid('zone')"
+          />
+          <span class="hint">Short code shown on pick lists, up to 4 characters.</span>
+        </div>
+      </div>
+
+      <footer class="modal-foot">
+        <button type="button" class="btn btn-secondary" (click)="dismiss.emit()">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-testid="location-save">
+          {{ editing() ? 'Save changes' : 'Create location' }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

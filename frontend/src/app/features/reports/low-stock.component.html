@@ -1,0 +1,87 @@
+<div class="page" data-testid="low-stock-page">
+  <div class="page-head">
+    <div>
+      <h1>Low stock report</h1>
+      <p>Items at or below their reorder threshold, most urgent first.</p>
+    </div>
+    <a class="btn btn-secondary" routerLink="/items">Browse all items</a>
+  </div>
+
+  <section class="grid-auto summary">
+    <div class="card card-pad stat">
+      <span class="stat-label">Needing attention</span>
+      <span class="stat-value num">{{ rows().length }}</span>
+      <span class="muted">items at or below threshold</span>
+    </div>
+    <div class="card card-pad stat">
+      <span class="stat-label">Out of stock</span>
+      <span class="stat-value num danger">{{ outOfStock() }}</span>
+      <span class="muted">nothing on hand anywhere</span>
+    </div>
+  </section>
+
+  <section class="card" data-testid="low-stock-list">
+    <div class="card-head">
+      <h2 class="card-title">Reorder list</h2>
+      <span class="muted">{{ sorted().length }} items</span>
+    </div>
+
+    @if (loading()) {
+      <div class="card-pad stack" data-testid="low-stock-loading">
+        @for (row of [1, 2, 3]; track row) {
+          <div class="skeleton"></div>
+        }
+      </div>
+    } @else if (error()) {
+      <div class="state" data-testid="low-stock-error">
+        <span class="state-icon" aria-hidden="true">⚠</span>
+        <h3>We could not build the report</h3>
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (sorted().length === 0) {
+      <div class="state" data-testid="low-stock-empty">
+        <span class="state-icon" aria-hidden="true">✓</span>
+        <h3>Everything is above its reorder level</h3>
+        <p>Nothing needs reordering right now.</p>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="data" data-testid="low-stock-table">
+          <thead>
+            <tr>
+              <th scope="col">SKU</th>
+              <th scope="col">Name</th>
+              <th scope="col" class="right">On hand</th>
+              <th scope="col" class="right col-reorder">Reorder at</th>
+              <th scope="col" class="right">Shortfall</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="right col-action">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of sorted(); track row.id) {
+              <tr [attr.data-testid]="'low-stock-row-' + row.sku">
+                <td class="mono"><a [routerLink]="['/items', row.id]">{{ row.sku }}</a></td>
+                <td class="strong">{{ row.name }}</td>
+                <td class="right num">{{ row.totalQty }} <span class="muted">{{ row.unit }}</span></td>
+                <td class="right num muted col-reorder">{{ row.reorderAt }}</td>
+                <td class="right num" [class.danger]="shortfall(row) > 0" [class.muted]="shortfall(row) === 0">
+                  {{ shortfall(row) }}
+                </td>
+                <td><span [class]="severity(row)">{{ severityLabel(row) }}</span></td>
+                <td class="right col-action">
+                  <a
+                    class="btn btn-secondary btn-sm"
+                    [routerLink]="['/movements/new']"
+                    [queryParams]="{ itemId: row.id, type: 'IN' }"
+                    >Receive</a
+                  >
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

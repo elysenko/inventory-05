@@ -1,0 +1,97 @@
+<div class="auth-wrap">
+  <section class="auth-card card" data-testid="signup-card">
+    <p class="eyebrow">StockRoom inventory</p>
+    <h1>Create your account</h1>
+    <p class="muted">New accounts start with clerk access. A manager can upgrade you later.</p>
+
+    @if (error()) {
+      <div class="alert alert-error" role="alert" data-testid="signup-error">{{ error() }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="signup-name">Full name</label>
+        <input
+          id="signup-name"
+          type="text"
+          formControlName="name"
+          autocomplete="name"
+          placeholder="Dana Ruiz"
+          data-testid="signup-name"
+          [class.invalid]="invalid('name')"
+        />
+        @if (invalid('name')) {
+          <span class="field-error">Enter your full name.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="signup-email">Work email</label>
+        <input
+          id="signup-email"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          inputmode="email"
+          placeholder="name@company.com"
+          data-testid="signup-email"
+          [class.invalid]="invalid('email')"
+        />
+        @if (invalid('email')) {
+          <span class="field-error">Enter a valid email address.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="signup-password">Password</label>
+        <input
+          id="signup-password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+          placeholder="At least 8 characters"
+          data-testid="signup-password"
+          [class.invalid]="invalid('password')"
+        />
+        @if (invalid('password')) {
+          <span class="field-error">Use at least 8 characters.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="signup-confirm">Confirm password</label>
+        <input
+          id="signup-confirm"
+          type="password"
+          formControlName="confirm"
+          autocomplete="new-password"
+          placeholder="Repeat your password"
+          data-testid="signup-confirm"
+          [class.invalid]="invalid('confirm') || form.hasError('mismatch')"
+        />
+        @if (form.hasError('mismatch') && form.controls.confirm.touched) {
+          <span class="field-error">Those passwords do not match.</span>
+        }
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary btn-block"
+        data-testid="signup-submit"
+        [disabled]="submitting()"
+      >
+        {{ submitting() ? 'Creating account…' : 'Create account' }}
+      </button>
+    </form>
+
+    @if (previewShortcut) {
+      <button type="button" class="btn btn-ghost btn-block preview-skip" (click)="demoSignIn()">
+        {{ previewShortcut }}
+      </button>
+    }
+
+    <p class="auth-alt">
+      Already have an account? <a routerLink="/login" data-testid="link-login">Sign in</a>
+    </p>
+  </section>
+</div>

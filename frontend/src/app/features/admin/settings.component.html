@@ -1,0 +1,80 @@
+<div class="page narrow" data-testid="admin-settings-page">
+  <div class="page-head">
+    <div>
+      <h1>Admin settings</h1>
+      <p>Credentials for the backing services StockRoom depends on.</p>
+    </div>
+    @if (unconfiguredCount() > 0) {
+      <span class="badge badge-low">{{ unconfiguredCount() }} unconfigured</span>
+    } @else {
+      <span class="badge badge-ok">All services configured</span>
+    }
+  </div>
+
+  @if (success()) {
+    <div class="alert alert-success" role="status" data-testid="settings-success">{{ success() }}</div>
+  }
+  @if (error()) {
+    <div class="alert alert-error" role="alert" data-testid="settings-error">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="card card-pad stack" data-testid="settings-loading">
+      @for (row of [1, 2, 3]; track row) {
+        <div class="skeleton"></div>
+      }
+    </div>
+  } @else {
+    <form [formGroup]="form" data-testid="settings-list">
+      @for (card of cards; track card.service) {
+        <section class="card service" [attr.data-testid]="'service-card-' + card.service">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title">{{ card.title }}</h2>
+              <p class="muted blurb">{{ card.blurb }}</p>
+            </div>
+            @if (serviceConfigured(card.service)) {
+              <span class="badge badge-ok" [attr.data-testid]="'status-' + card.service">Configured</span>
+            } @else {
+              <span class="badge badge-low" [attr.data-testid]="'status-' + card.service">Needs setup</span>
+            }
+          </div>
+
+          <div class="card-pad">
+            @for (setting of forService(card.service); track setting.key) {
+              <div class="field">
+                <label [attr.for]="'setting-' + setting.key">
+                  {{ setting.label }} <span class="mono muted">{{ setting.key }}</span>
+                </label>
+                <input
+                  [id]="'setting-' + setting.key"
+                  [type]="setting.secret ? 'password' : 'text'"
+                  [formControlName]="controlName(setting.key)"
+                  [placeholder]="setting.configured ? 'Replace current value' : 'Not set — enter a value'"
+                  [attr.data-testid]="'input-' + setting.key"
+                  autocomplete="off"
+                />
+                <span class="hint">
+                  @if (setting.configured) {
+                    Current: <span class="mono">{{ setting.value }}</span>
+                  } @else {
+                    No value stored. The service is unavailable until this is set.
+                  }
+                </span>
+              </div>
+            }
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              [attr.data-testid]="'save-' + card.service"
+              (click)="save(card.service)"
+            >
+              Save {{ card.title }} credentials
+            </button>
+          </div>
+        </section>
+      }
+    </form>
+  }
+</div>

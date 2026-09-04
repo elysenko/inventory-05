@@ -1,0 +1,12 @@
+.narrow { max-width: 780px; }
+
+.service { margin-bottom: var(--space-5); }
+.card-title { margin: 0; font-size: var(--text-lg); }
+.blurb { margin: var(--space-1) 0 0; font-size: var(--text-sm); max-width: 46ch; }
+
+.field label .mono { font-weight: 400; font-size: var(--text-xs); }
+
+@media (max-width: 768px) {
+  .card-head { align-items: flex-start; }
+  .service .btn { width: 100%; }
+}

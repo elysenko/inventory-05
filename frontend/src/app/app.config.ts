@@ -1,5 +1,5 @@
 import { ApplicationConfig, InjectionToken } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
@@ -20,7 +20,11 @@ export const TRPC_CLIENT = new InjectionToken<AppRouterClient>('TRPC_CLIENT');
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
+    ),
     provideHttpClient(),
     provideAnimations(),
     {

@@ -1,21 +1,623 @@
 {
   "_generated": true,
   "_scaffolded_at": "2026-09-04T22:40:00Z",
-  "fileBudget": { "maxLines": 400, "hardLimit": 500 },
+  "fileBudget": {
+    "maxLines": 400,
+    "hardLimit": 500
+  },
   "routes": [
-    { "method": "GET", "path": "/health" },
-    { "method": "GET", "path": "/trpc/users.findAll" },
-    { "method": "GET", "path": "/trpc/users.findById" }
+    {
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "method": "GET",
+      "path": "/trpc/users.findAll"
+    },
+    {
+      "method": "GET",
+      "path": "/trpc/users.findById"
+    }
   ],
   "components": [
-    { "selector": "app-root", "file": "frontend/src/app/app.component.ts", "maxLines": 400 },
-    { "selector": "app-home", "file": "frontend/src/app/home/home.component.ts", "maxLines": 400 }
+    {
+      "selector": "app-root",
+      "file": "frontend/src/app/app.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-login",
+      "file": "frontend/src/app/features/auth/login.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-signup",
+      "file": "frontend/src/app/features/auth/signup.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-list",
+      "file": "frontend/src/app/features/items/item-list.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-detail",
+      "file": "frontend/src/app/features/items/item-detail.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-item-form-modal",
+      "file": "frontend/src/app/features/items/item-form-modal.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-location-list",
+      "file": "frontend/src/app/features/locations/location-list.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-location-form-modal",
+      "file": "frontend/src/app/features/locations/location-form-modal.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-movement-new",
+      "file": "frontend/src/app/features/movements/movement-new.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-movement-audit",
+      "file": "frontend/src/app/features/movements/movement-audit.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-low-stock",
+      "file": "frontend/src/app/features/reports/low-stock.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-admin-settings",
+      "file": "frontend/src/app/features/admin/settings.component.ts",
+      "maxLines": 400
+    },
+    {
+      "selector": "app-forbidden",
+      "file": "frontend/src/app/features/errors/forbidden.component.ts",
+      "maxLines": 400
+    }
   ],
   "testIds": [
-    { "id": "home-main", "element": "main", "component": "app-home" },
-    { "id": "home-title", "element": "h1", "component": "app-home" },
-    { "id": "users-loading", "element": "p", "component": "app-home" },
-    { "id": "users-error", "element": "p", "component": "app-home" },
-    { "id": "users-list", "element": "ul", "component": "app-home" }
+    {
+      "id": "app-ready",
+      "element": "div",
+      "component": "app-root"
+    },
+    {
+      "id": "app-header",
+      "element": "header",
+      "component": "app-root"
+    },
+    {
+      "id": "app-brand",
+      "element": "a",
+      "component": "app-root"
+    },
+    {
+      "id": "nav-toggle",
+      "element": "button",
+      "component": "app-root"
+    },
+    {
+      "id": "mobile-nav",
+      "element": "nav",
+      "component": "app-root"
+    },
+    {
+      "id": "current-user",
+      "element": "div",
+      "component": "app-root"
+    },
+    {
+      "id": "logout",
+      "element": "button",
+      "component": "app-root"
+    },
+    {
+      "id": "preview-role",
+      "element": "select",
+      "component": "app-root"
+    },
+    {
+      "id": "fab-new-movement",
+      "element": "a",
+      "component": "app-root"
+    },
+    {
+      "id": "login-card",
+      "element": "section",
+      "component": "app-login"
+    },
+    {
+      "id": "login-email",
+      "element": "input",
+      "component": "app-login"
+    },
+    {
+      "id": "login-password",
+      "element": "input",
+      "component": "app-login"
+    },
+    {
+      "id": "login-submit",
+      "element": "button",
+      "component": "app-login"
+    },
+    {
+      "id": "login-error",
+      "element": "div",
+      "component": "app-login"
+    },
+    {
+      "id": "link-signup",
+      "element": "a",
+      "component": "app-login"
+    },
+    {
+      "id": "signup-card",
+      "element": "section",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-name",
+      "element": "input",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-email",
+      "element": "input",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-password",
+      "element": "input",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-confirm",
+      "element": "input",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-submit",
+      "element": "button",
+      "component": "app-signup"
+    },
+    {
+      "id": "signup-error",
+      "element": "div",
+      "component": "app-signup"
+    },
+    {
+      "id": "link-login",
+      "element": "a",
+      "component": "app-signup"
+    },
+    {
+      "id": "items-page",
+      "element": "div",
+      "component": "app-item-list"
+    },
+    {
+      "id": "items-list",
+      "element": "section",
+      "component": "app-item-list"
+    },
+    {
+      "id": "items-table",
+      "element": "table",
+      "component": "app-item-list"
+    },
+    {
+      "id": "items-search",
+      "element": "input",
+      "component": "app-item-list"
+    },
+    {
+      "id": "new-item-button",
+      "element": "button",
+      "component": "app-item-list"
+    },
+    {
+      "id": "items-loading",
+      "element": "div",
+      "component": "app-item-list"
+    },
+    {
+      "id": "items-error",
+      "element": "div",
+      "component": "app-item-list"
+    },
+    {
+      "id": "items-empty",
+      "element": "div",
+      "component": "app-item-list"
+    },
+    {
+      "id": "items-notice",
+      "element": "div",
+      "component": "app-item-list"
+    },
+    {
+      "id": "item-detail-page",
+      "element": "div",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "item-summary",
+      "element": "section",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "stock-table",
+      "element": "table",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "stock-total-row",
+      "element": "tr",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "stock-empty",
+      "element": "div",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "item-movements-table",
+      "element": "table",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "item-movements-empty",
+      "element": "div",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "tab-stock",
+      "element": "a",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "tab-movements",
+      "element": "a",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "edit-item-button",
+      "element": "button",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "record-movement-button",
+      "element": "a",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "item-low-banner",
+      "element": "div",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "item-detail-loading",
+      "element": "div",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "item-detail-error",
+      "element": "div",
+      "component": "app-item-detail"
+    },
+    {
+      "id": "item-form-modal",
+      "element": "section",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "item-sku",
+      "element": "input",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "item-name",
+      "element": "input",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "item-unit",
+      "element": "select",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "item-reorder",
+      "element": "input",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "item-description",
+      "element": "textarea",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "item-save",
+      "element": "button",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "item-sku-error",
+      "element": "div",
+      "component": "app-item-form-modal"
+    },
+    {
+      "id": "locations-page",
+      "element": "div",
+      "component": "app-location-list"
+    },
+    {
+      "id": "locations-list",
+      "element": "section",
+      "component": "app-location-list"
+    },
+    {
+      "id": "locations-table",
+      "element": "table",
+      "component": "app-location-list"
+    },
+    {
+      "id": "new-location-button",
+      "element": "button",
+      "component": "app-location-list"
+    },
+    {
+      "id": "locations-empty",
+      "element": "div",
+      "component": "app-location-list"
+    },
+    {
+      "id": "locations-loading",
+      "element": "div",
+      "component": "app-location-list"
+    },
+    {
+      "id": "locations-error",
+      "element": "div",
+      "component": "app-location-list"
+    },
+    {
+      "id": "locations-notice",
+      "element": "div",
+      "component": "app-location-list"
+    },
+    {
+      "id": "location-form-modal",
+      "element": "section",
+      "component": "app-location-form-modal"
+    },
+    {
+      "id": "location-name",
+      "element": "input",
+      "component": "app-location-form-modal"
+    },
+    {
+      "id": "location-zone",
+      "element": "input",
+      "component": "app-location-form-modal"
+    },
+    {
+      "id": "location-save",
+      "element": "button",
+      "component": "app-location-form-modal"
+    },
+    {
+      "id": "location-name-error",
+      "element": "div",
+      "component": "app-location-form-modal"
+    },
+    {
+      "id": "movement-new-page",
+      "element": "div",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-form",
+      "element": "section",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-item",
+      "element": "select",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-type",
+      "element": "div",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-from",
+      "element": "select",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-to",
+      "element": "select",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-qty",
+      "element": "input",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-note",
+      "element": "textarea",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-submit",
+      "element": "button",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-error",
+      "element": "div",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movement-success",
+      "element": "div",
+      "component": "app-movement-new"
+    },
+    {
+      "id": "movements-page",
+      "element": "div",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "movements-list",
+      "element": "section",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "movements-table",
+      "element": "table",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "movements-filters",
+      "element": "section",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "filter-item",
+      "element": "select",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "filter-type",
+      "element": "select",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "filter-from",
+      "element": "input",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "filter-to",
+      "element": "input",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "clear-filters",
+      "element": "button",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "movements-pager",
+      "element": "nav",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "movements-empty",
+      "element": "div",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "movements-loading",
+      "element": "div",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "movements-error",
+      "element": "div",
+      "component": "app-movement-audit"
+    },
+    {
+      "id": "low-stock-page",
+      "element": "div",
+      "component": "app-low-stock"
+    },
+    {
+      "id": "low-stock-list",
+      "element": "section",
+      "component": "app-low-stock"
+    },
+    {
+      "id": "low-stock-table",
+      "element": "table",
+      "component": "app-low-stock"
+    },
+    {
+      "id": "low-stock-empty",
+      "element": "div",
+      "component": "app-low-stock"
+    },
+    {
+      "id": "low-stock-loading",
+      "element": "div",
+      "component": "app-low-stock"
+    },
+    {
+      "id": "low-stock-error",
+      "element": "div",
+      "component": "app-low-stock"
+    },
+    {
+      "id": "admin-settings-page",
+      "element": "div",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "settings-list",
+      "element": "form",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "settings-success",
+      "element": "div",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "settings-error",
+      "element": "div",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "settings-loading",
+      "element": "div",
+      "component": "app-admin-settings"
+    },
+    {
+      "id": "forbidden-page",
+      "element": "div",
+      "component": "app-forbidden"
+    },
+    {
+      "id": "back-to-items",
+      "element": "a",
+      "component": "app-forbidden"
+    }
+  ],
+  "spaRoutes": [
+    "/login",
+    "/signup",
+    "/items",
+    "/items/:id",
+    "/locations",
+    "/movements/new",
+    "/movements",
+    "/reports/low-stock",
+    "/admin/settings",
+    "/403"
   ]
 }

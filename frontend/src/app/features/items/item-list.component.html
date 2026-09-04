@@ -1,0 +1,118 @@
+<div class="page" data-testid="items-page">
+  <div class="page-head">
+    <div>
+      <h1>Item catalogue</h1>
+      <p>{{ items().length }} items tracked · {{ lowStockCount() }} at or below reorder level</p>
+    </div>
+    <div class="row">
+      @if (auth.isManager()) {
+        <button type="button" class="btn btn-primary" data-testid="new-item-button" (click)="openNew()">
+          ＋ New item
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (notice()) {
+    <div class="alert alert-success" role="status" data-testid="items-notice">{{ notice() }}</div>
+  }
+
+  <section class="card" data-testid="items-list">
+    <div class="card-head">
+      <div class="search">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input
+          type="search"
+          placeholder="Search by SKU or name"
+          aria-label="Search items"
+          data-testid="items-search"
+          [value]="search()"
+          (input)="onSearch($event)"
+        />
+        @if (search()) {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="clearSearch()">Clear</button>
+        }
+      </div>
+      <span class="muted result-count">{{ visible().length }} shown</span>
+    </div>
+
+    @if (loading()) {
+      <div class="card-pad stack" data-testid="items-loading">
+        @for (row of [1, 2, 3, 4, 5]; track row) {
+          <div class="skeleton"></div>
+        }
+      </div>
+    } @else if (error()) {
+      <div class="state" data-testid="items-error">
+        <span class="state-icon" aria-hidden="true">⚠</span>
+        <h3>We could not load the catalogue</h3>
+        <p>{{ error() }}</p>
+      </div>
+    } @else if (visible().length === 0) {
+      <div class="state" data-testid="items-empty">
+        <span class="state-icon" aria-hidden="true">▤</span>
+        <h3>No items match “{{ search() }}”</h3>
+        <p>Try a different SKU or product name.</p>
+        <button type="button" class="btn btn-secondary" (click)="clearSearch()">Clear search</button>
+      </div>
+    } @else {
+      <div class="table-wrap">
+        <table class="data" data-testid="items-table">
+          <thead>
+            <tr>
+              <th scope="col">
+                <button type="button" (click)="toggleSort('sku')">SKU {{ sortIndicator('sku') }}</button>
+              </th>
+              <th scope="col">
+                <button type="button" (click)="toggleSort('name')">Name {{ sortIndicator('name') }}</button>
+              </th>
+              <th scope="col" class="col-unit">
+                <button type="button" (click)="toggleSort('unit')">Unit {{ sortIndicator('unit') }}</button>
+              </th>
+              <th scope="col" class="right col-reorder">
+                <button type="button" (click)="toggleSort('reorderAt')">
+                  Reorder at {{ sortIndicator('reorderAt') }}
+                </button>
+              </th>
+              <th scope="col" class="right">
+                <button type="button" (click)="toggleSort('totalQty')">
+                  On hand {{ sortIndicator('totalQty') }}
+                </button>
+              </th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of visible(); track item.id) {
+              <tr
+                class="clickable"
+                [class.flagged]="isLow(item)"
+                [attr.data-testid]="'item-row-' + item.sku"
+                (click)="open(item)"
+              >
+                <td class="mono">{{ item.sku }}</td>
+                <td>
+                  <span class="item-name">{{ item.name }}</span>
+                  <span class="item-sub muted">{{ item.description }}</span>
+                </td>
+                <td class="col-unit muted">{{ item.unit }}</td>
+                <td class="right num muted col-reorder">{{ item.reorderAt }}</td>
+                <td class="right num strong">{{ item.totalQty }}</td>
+                <td><span [class]="stockBadge(item)">{{ stockLabel(item) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>
+
+@if (modalName() === 'new-item') {
+  <app-item-form-modal
+    [item]="null"
+    [takenSkus]="takenSkus()"
+    (dismiss)="closeModal()"
+    (save)="createItem($event)"
+  />
+}
