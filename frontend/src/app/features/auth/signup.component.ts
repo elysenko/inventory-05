@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { IS_PREVIEW } from '../../core/preview';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -27,7 +28,7 @@ export class SignupComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly previewShortcut: string | null = COLOSSUS_PREVIEW
+  protected readonly previewShortcut: string | null = IS_PREVIEW
     ? 'Skip login — Demo Mode'
     : null;
 

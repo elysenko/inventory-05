@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
+import { IS_PREVIEW } from '../../core/preview';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +18,7 @@ export class LoginComponent {
   private readonly route = inject(ActivatedRoute);
 
   /** Preview-only shortcut. Held in TypeScript so it vanishes from production builds. */
-  protected readonly previewShortcut: string | null = COLOSSUS_PREVIEW
+  protected readonly previewShortcut: string | null = IS_PREVIEW
     ? 'Skip login — Demo Mode'
     : null;
 

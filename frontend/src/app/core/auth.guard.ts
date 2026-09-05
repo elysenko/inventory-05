@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
+import { IS_PREVIEW } from './preview';
 import { Role } from './models';
 
 /**
@@ -12,7 +13,7 @@ function allow(minimumRole: Role, fallback: string): CanActivateFn {
     const auth = inject(AuthService);
     const router = inject(Router);
 
-    if (COLOSSUS_PREVIEW) {
+    if (IS_PREVIEW) {
       // Static preview: treat the session as signed in so every route is
       // reachable as a cold, deep-linked page load.
       auth.ensurePreviewSession(minimumRole);

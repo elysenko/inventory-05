@@ -9,6 +9,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter } from 'rxjs';
 import { AuthService } from './core/auth.service';
 import { Role } from './core/models';
+import { IS_PREVIEW } from './core/preview';
 
 interface NavLink {
   path: string;
@@ -29,7 +30,7 @@ export class AppComponent {
   protected readonly auth = inject(AuthService);
 
   /** Preview-only role switcher: shows how navigation changes per role. */
-  protected readonly previewRoles: Role[] | null = COLOSSUS_PREVIEW
+  protected readonly previewRoles: Role[] | null = IS_PREVIEW
     ? ['USER', 'MANAGER', 'ADMIN']
     : null;
 

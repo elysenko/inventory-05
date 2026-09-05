@@ -19,7 +19,7 @@
           "options": {
             "outputPath": {
               "base": "dist/frontend",
-              "browser": ""
+              "browser": "browser"
             },
             "index": "src/index.html",
             "browser": "src/main.ts",

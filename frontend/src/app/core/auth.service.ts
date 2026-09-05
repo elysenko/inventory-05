@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthResponse, Role, User } from './models';
+import { IS_PREVIEW } from './preview';
 import { readJson, readString, remove, write } from './storage';
 
 const USER_KEY = 'user';
@@ -96,7 +97,7 @@ export class AuthService {
       throw new Error('Enter a valid email address, for example name@company.com');
     }
 
-    if (COLOSSUS_PREVIEW) {
+    if (IS_PREVIEW) {
       this.setSession(
         {
           id: 'preview-user',
@@ -124,7 +125,7 @@ export class AuthService {
       throw new Error('Enter a valid email address, for example name@company.com');
     }
 
-    if (COLOSSUS_PREVIEW) {
+    if (IS_PREVIEW) {
       this.setSession(
         { id: 'preview-user', email: trimmed, name: name.trim(), role: inferRole(trimmed) },
         'preview-session',
@@ -152,7 +153,7 @@ export class AuthService {
 
   /** Preview-only: seeds a signed-in session without any credentials. */
   previewSignIn(role: Role = 'ADMIN'): void {
-    if (!COLOSSUS_PREVIEW) {
+    if (!IS_PREVIEW) {
       return;
     }
     this.setSession(
@@ -171,7 +172,7 @@ export class AuthService {
    * instead of bouncing a reviewer to `/login`. Never redirects.
    */
   ensurePreviewSession(minimumRole: Role = 'USER'): void {
-    if (!COLOSSUS_PREVIEW) {
+    if (!IS_PREVIEW) {
       return;
     }
     const current = this.user();
@@ -186,7 +187,7 @@ export class AuthService {
 
   /** Preview-only: lets a reviewer see how each role changes the navigation. */
   setPreviewRole(role: Role): void {
-    if (!COLOSSUS_PREVIEW) {
+    if (!IS_PREVIEW) {
       return;
     }
     const current = this.user();

@@ -8,15 +8,108 @@
   "routes": [
     {
       "method": "GET",
-      "path": "/api/health"
+      "path": "/healthz",
+      "auth": "public"
     },
     {
       "method": "GET",
-      "path": "/trpc/users.findAll"
+      "path": "/api/health",
+      "auth": "public"
     },
     {
       "method": "GET",
-      "path": "/trpc/users.findById"
+      "path": "/api/health/deep",
+      "auth": "public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/login",
+      "auth": "public"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth/signup",
+      "auth": "public"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me",
+      "auth": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/items",
+      "auth": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/items/:id",
+      "auth": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/items/:id/movements",
+      "auth": "authenticated"
+    },
+    {
+      "method": "POST",
+      "path": "/api/items",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/items/:id",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/items/:id",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "GET",
+      "path": "/api/locations",
+      "auth": "authenticated"
+    },
+    {
+      "method": "POST",
+      "path": "/api/locations",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/locations/:id",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/locations/:id",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/movements",
+      "auth": "authenticated"
+    },
+    {
+      "method": "GET",
+      "path": "/api/movements",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "GET",
+      "path": "/api/reports/low-stock",
+      "auth": "MANAGER"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/settings",
+      "auth": "ADMIN"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/admin/settings",
+      "auth": "ADMIN"
     }
   ],
   "components": [
