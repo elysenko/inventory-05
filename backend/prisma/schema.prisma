@@ -16,6 +16,9 @@ model User {
   role         Role     @default(USER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  /// Audit-log back-relation: every Movement records who performed it.
+  movements Movement[]
 }
 
 /// One value per role the stack contract declares (stacks/combos/enterprise.json auth.roles).
@@ -40,4 +43,100 @@ model ColossusAccount {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("colossus_accounts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// StockRoom — multi-location inventory domain.
+//
+// Invariant: an item's on-hand total is ALWAYS the sum of its StockLevel rows;
+// nothing stores a denormalised total. Movements are the immutable audit log —
+// every balance change is written inside the same transaction as its Movement
+// row, and referenced items/locations/users can never be deleted out from under
+// it (`onDelete: Restrict`).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// IN credits `toLoc`; OUT debits `fromLoc`; TRANSFER debits `fromLoc` and credits `toLoc`.
+enum MovementType {
+  IN
+  OUT
+  TRANSFER
+}
+
+/// Catalogue entry. `reorderAt` is the low-stock threshold: an item is reported
+/// low when its summed on-hand quantity is <= this value (0 stock rows => 0).
+model Item {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  description String?
+  unit        String
+  reorderAt   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stockLevels StockLevel[]
+  movements   Movement[]
+}
+
+/// Physical storage location (e.g. "Zone A"). `zone` is the short grouping code.
+model Location {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  zone      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stockLevels   StockLevel[]
+  movementsFrom Movement[]   @relation("MovementFrom")
+  movementsTo   Movement[]   @relation("MovementTo")
+}
+
+/// Per-(item, location) balance. The unique pair is what makes the movement
+/// service's race-free `updateMany(qty >= n)` debit and `upsert` credit safe.
+model StockLevel {
+  id         String   @id @default(uuid())
+  itemId     String
+  locationId String
+  qty        Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  item     Item     @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  @@unique([itemId, locationId])
+  @@index([itemId])
+  @@index([locationId])
+}
+
+/// Append-only audit log of stock changes. Never updated or deleted by the app.
+model Movement {
+  id        String       @id @default(uuid())
+  type      MovementType
+  itemId    String
+  fromLocId String?
+  toLocId   String?
+  qty       Int
+  note      String?
+  userId    String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  item    Item      @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  fromLoc Location? @relation("MovementFrom", fields: [fromLocId], references: [id], onDelete: Restrict)
+  toLoc   Location? @relation("MovementTo", fields: [toLocId], references: [id], onDelete: Restrict)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([itemId])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+/// Runtime override layer for backing-service credentials, surfaced at
+/// /api/admin/settings. `resolveConfig()` reads process.env first and falls
+/// back to the row with the matching key.
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

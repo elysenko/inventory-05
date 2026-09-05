@@ -14,4 +14,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY package*.json ./
 EXPOSE 3000
-CMD ["node", "dist/main"]
+# Business fixtures are idempotent and never exit non-zero, so they can front the
+# app process safely; platform logins are seeded by the migrate job (seed.js).
+CMD ["sh", "-c", "node prisma/seed/fixtures.js; node dist/main"]
