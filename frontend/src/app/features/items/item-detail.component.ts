@@ -1,9 +1,27 @@
 import { ChangeDetectionStrategy, Component, Input, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ApiRequestError } from '../../core/api/api-client.service';
+import { ItemsApi } from '../../core/api/items-api.service';
 import { AuthService } from '../../core/auth.service';
 import { Item, ItemDetail, Movement, StockLevelRow } from '../../core/models';
+import { IS_PREVIEW } from '../../core/preview';
+import { PREVIEW_ITEM_DETAILS, PREVIEW_MOVEMENTS } from '../../core/preview-fixtures';
 import { ItemFormModalComponent } from './item-form-modal.component';
+
+/**
+ * Rendered while the first request is still in flight. The breadcrumb reads
+ * `item().sku` outside the loading guard, so `item()` must always be an object.
+ */
+const PLACEHOLDER: ItemDetail = {
+  id: '',
+  sku: '—',
+  name: '',
+  unit: '',
+  reorderAt: 0,
+  totalQty: 0,
+  stockLevels: [],
+};
 
 @Component({
   selector: 'app-item-detail',
@@ -15,51 +33,31 @@ import { ItemFormModalComponent } from './item-form-modal.component';
 export class ItemDetailComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly itemsApi = inject(ItemsApi);
   protected readonly auth = inject(AuthService);
 
-  /** Backend-owned data: the item detail payload (header + per-location breakdown). */
-  readonly details = signal<ItemDetail[]>([
-    {
-      id: 'itm-1002', sku: 'SKU-1002', name: 'Hex Bolt M8 x 40', unit: 'box', reorderAt: 25, totalQty: 12,
-      description: 'Grade 8.8 zinc-plated, 100 bolts per box.',
-      stockLevels: [
-        { id: 'sl-1', itemId: 'itm-1002', locationId: 'loc-a', locationName: 'Zone A', zone: 'A', qty: 7 },
-        { id: 'sl-2', itemId: 'itm-1002', locationId: 'loc-b', locationName: 'Zone B', zone: 'B', qty: 5 },
-        { id: 'sl-3', itemId: 'itm-1002', locationId: 'loc-c', locationName: 'Zone C', zone: 'C', qty: 0 },
-      ],
-    },
-    {
-      id: 'itm-1001', sku: 'SKU-1001', name: 'Steel Bracket 90°', unit: 'ea', reorderAt: 40, totalQty: 128,
-      description: 'Zinc-plated mounting bracket, 4mm gauge.',
-      stockLevels: [
-        { id: 'sl-4', itemId: 'itm-1001', locationId: 'loc-a', locationName: 'Zone A', zone: 'A', qty: 74 },
-        { id: 'sl-5', itemId: 'itm-1001', locationId: 'loc-b', locationName: 'Zone B', zone: 'B', qty: 54 },
-      ],
-    },
-    {
-      id: 'itm-1007', sku: 'SKU-1007', name: 'Thermal Labels 4x6', unit: 'pack', reorderAt: 12, totalQty: 0,
-      description: '250 direct-thermal labels per pack.',
-      stockLevels: [],
-    },
-  ]);
+  /** `GET /api/items/:id` — header fields plus the per-location breakdown. */
+  private readonly detail = signal<ItemDetail | null>(null);
 
-  /** Backend-owned data: movement history scoped to this item. */
-  readonly movements = signal<Movement[]>([
-    { id: 'mv-31', type: 'OUT', itemId: 'itm-1002', itemSku: 'SKU-1002', itemName: 'Hex Bolt M8 x 40', fromLocName: 'Zone A', toLocName: null, qty: 8, unit: 'box', note: 'Line 3 replenishment', userEmail: 'dana.ruiz@stockroom.example', createdAt: '2026-09-04T08:42:00Z' },
-    { id: 'mv-27', type: 'TRANSFER', itemId: 'itm-1002', itemSku: 'SKU-1002', itemName: 'Hex Bolt M8 x 40', fromLocName: 'Zone B', toLocName: 'Zone A', qty: 5, unit: 'box', note: 'Rebalance after count', userEmail: 'sam.okafor@stockroom.example', createdAt: '2026-09-03T16:05:00Z' },
-    { id: 'mv-19', type: 'IN', itemId: 'itm-1002', itemSku: 'SKU-1002', itemName: 'Hex Bolt M8 x 40', fromLocName: null, toLocName: 'Zone B', qty: 10, unit: 'box', note: 'PO-4471 delivery', userEmail: 'dana.ruiz@stockroom.example', createdAt: '2026-09-02T10:18:00Z' },
-    { id: 'mv-12', type: 'IN', itemId: 'itm-1001', itemSku: 'SKU-1001', itemName: 'Steel Bracket 90°', fromLocName: null, toLocName: 'Zone A', qty: 60, unit: 'ea', note: 'PO-4468 delivery', userEmail: 'sam.okafor@stockroom.example', createdAt: '2026-09-01T09:30:00Z' },
-  ]);
+  /** `GET /api/items/:id/movements` — history for this item only. */
+  readonly movements = signal<Movement[]>([]);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(!IS_PREVIEW);
   protected readonly error = signal<string | null>(null);
+  protected readonly formError = signal<string | null>(null);
 
   protected readonly itemId = signal<string>('');
   protected readonly tabName = signal<'stock' | 'movements'>('stock');
   protected readonly modalName = signal<string | null>(null);
 
+  /** The route param is the only load trigger, so revisiting `/items/:id` refetches. */
   @Input() set id(value: string) {
-    this.itemId.set(value ?? '');
+    const next = value ?? '';
+    if (next === this.itemId() && this.detail()) {
+      return;
+    }
+    this.itemId.set(next);
+    void this.load();
   }
 
   @Input() set tab(value: string | null) {
@@ -70,11 +68,44 @@ export class ItemDetailComponent {
     this.modalName.set(value ?? null);
   }
 
-  /** Falls back to the first fixture so any `/items/:id` deep link renders a populated screen. */
-  protected readonly item = computed<ItemDetail>(() => {
-    const rows = this.details();
-    return rows.find((row) => row.id === this.itemId()) ?? rows[0];
-  });
+  private async load(): Promise<void> {
+    const id = this.itemId();
+
+    if (IS_PREVIEW) {
+      const fixture =
+        PREVIEW_ITEM_DETAILS.find((row) => row.id === id) ?? PREVIEW_ITEM_DETAILS[0];
+      this.detail.set(fixture);
+      this.movements.set(PREVIEW_MOVEMENTS.filter((m) => m.itemId === fixture.id));
+      this.loading.set(false);
+      return;
+    }
+
+    if (!id) {
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      // Both reads are for the same item and neither depends on the other, so
+      // they go out together rather than serially.
+      const [detail, movements] = await Promise.all([
+        this.itemsApi.get(id),
+        this.itemsApi.movements(id),
+      ]);
+      this.detail.set(detail);
+      this.movements.set(movements);
+    } catch (err) {
+      this.error.set(
+        err instanceof ApiRequestError && err.status === 404
+          ? 'That item no longer exists.'
+          : messageOf(err),
+      );
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  protected readonly item = computed<ItemDetail>(() => this.detail() ?? PLACEHOLDER);
 
   protected readonly breakdown = computed<StockLevelRow[]>(() => this.item().stockLevels);
 
@@ -86,11 +117,11 @@ export class ItemDetailComponent {
     () => this.breakdown().filter((row) => row.qty > 0).length,
   );
 
-  protected readonly itemMovements = computed<Movement[]>(() =>
-    this.movements().filter((movement) => movement.itemId === this.item().id),
-  );
+  protected readonly itemMovements = computed<Movement[]>(() => this.movements());
 
-  protected readonly isLow = computed(() => this.item().totalQty <= this.item().reorderAt);
+  protected readonly isLow = computed(
+    () => !!this.detail() && this.item().totalQty <= this.item().reorderAt,
+  );
 
   protected readonly shortfall = computed(() =>
     Math.max(0, this.item().reorderAt - this.item().totalQty),
@@ -108,19 +139,43 @@ export class ItemDetailComponent {
   }
 
   protected openEdit(): void {
+    this.formError.set(null);
     this.merge({ modal: 'edit-item' });
   }
 
   protected closeModal(): void {
+    this.formError.set(null);
     this.merge({ modal: null });
   }
 
-  protected saveItem(draft: Partial<Item>): void {
+  /** Manager-only edit through `PATCH /api/items/:id`, then a refetch. */
+  protected async saveItem(draft: Partial<Item>): Promise<void> {
+    this.formError.set(null);
     const current = this.item();
-    this.details.update((rows) =>
-      rows.map((row) => (row.id === current.id ? { ...row, ...draft } : row)),
-    );
-    this.closeModal();
+
+    if (IS_PREVIEW) {
+      this.detail.set({ ...current, ...draft });
+      this.closeModal();
+      return;
+    }
+
+    try {
+      await this.itemsApi.update(current.id, {
+        sku: draft.sku,
+        name: draft.name,
+        unit: draft.unit,
+        reorderAt: draft.reorderAt,
+        description: draft.description ?? '',
+      });
+      this.closeModal();
+      await this.load();
+    } catch (err) {
+      this.formError.set(
+        err instanceof ApiRequestError && err.fieldError('sku')
+          ? 'That SKU is already used by another item.'
+          : messageOf(err),
+      );
+    }
   }
 
   private merge(queryParams: Record<string, string | null>): void {
@@ -130,4 +185,8 @@ export class ItemDetailComponent {
       queryParamsHandling: 'merge',
     });
   }
+}
+
+function messageOf(err: unknown): string {
+  return err instanceof Error ? err.message : 'Something went wrong.';
 }

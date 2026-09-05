@@ -1,7 +1,19 @@
-import { ChangeDetectionStrategy, Component, Input, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ApiRequestError } from '../../core/api/api-client.service';
+import { ItemsApi } from '../../core/api/items-api.service';
 import { AuthService } from '../../core/auth.service';
 import { Item } from '../../core/models';
+import { IS_PREVIEW } from '../../core/preview';
+import { PREVIEW_ITEMS } from '../../core/preview-fixtures';
 import { ItemFormModalComponent } from './item-form-modal.component';
 
 type SortKey = 'sku' | 'name' | 'unit' | 'reorderAt' | 'totalQty';
@@ -13,26 +25,20 @@ type SortKey = 'sku' | 'name' | 'unit' | 'reorderAt' | 'totalQty';
   styleUrl: './item-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ItemListComponent {
+export class ItemListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly itemsApi = inject(ItemsApi);
   protected readonly auth = inject(AuthService);
 
-  /** Backend-owned data. Kept as a typed signal so the API wiring can replace the initializer. */
-  readonly items = signal<Item[]>([
-    { id: 'itm-1001', sku: 'SKU-1001', name: 'Steel Bracket 90°', unit: 'ea', reorderAt: 40, totalQty: 128, description: 'Zinc-plated mounting bracket' },
-    { id: 'itm-1002', sku: 'SKU-1002', name: 'Hex Bolt M8 x 40', unit: 'box', reorderAt: 25, totalQty: 12, description: 'Grade 8.8, 100 per box' },
-    { id: 'itm-1003', sku: 'SKU-1003', name: 'Nitrile Gloves (L)', unit: 'box', reorderAt: 30, totalQty: 30, description: 'Powder-free, 100 per box' },
-    { id: 'itm-1004', sku: 'SKU-1004', name: 'Packing Tape 48mm', unit: 'roll', reorderAt: 20, totalQty: 96, description: 'Clear acrylic, 66m' },
-    { id: 'itm-1005', sku: 'SKU-1005', name: 'Pallet Wrap 500mm', unit: 'roll', reorderAt: 15, totalQty: 4, description: '23 micron stretch film' },
-    { id: 'itm-1006', sku: 'SKU-1006', name: 'Safety Goggles', unit: 'ea', reorderAt: 10, totalQty: 54, description: 'Anti-fog, EN166' },
-    { id: 'itm-1007', sku: 'SKU-1007', name: 'Thermal Labels 4x6', unit: 'pack', reorderAt: 12, totalQty: 0, description: '250 labels per pack' },
-    { id: 'itm-1008', sku: 'SKU-1008', name: 'Cable Ties 300mm', unit: 'bag', reorderAt: 25, totalQty: 210, description: 'Black UV-stable, 100 per bag' },
-  ]);
+  /** Live catalogue from `GET /api/items`, including each item's rolled-up on-hand total. */
+  readonly items = signal<Item[]>(IS_PREVIEW ? PREVIEW_ITEMS : []);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(!IS_PREVIEW);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+  /** Surfaced inside the create modal so a rejected save keeps the typed values. */
+  protected readonly formError = signal<string | null>(null);
 
   protected readonly search = signal('');
   protected readonly sortKey = signal<string>('sku');
@@ -49,6 +55,30 @@ export class ItemListComponent {
 
   @Input() set modal(value: string | null) {
     this.modalName.set(value ?? null);
+  }
+
+  ngOnInit(): void {
+    void this.load();
+  }
+
+  /**
+   * Search and sort run client-side over the loaded catalogue: it is a single
+   * bounded list, so filtering locally keeps typing instant and avoids a
+   * request per keystroke.
+   */
+  private async load(): Promise<void> {
+    if (IS_PREVIEW) {
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      this.items.set(await this.itemsApi.list());
+    } catch (err) {
+      this.error.set(messageOf(err));
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   protected readonly visible = computed<Item[]>(() => {
@@ -125,28 +155,55 @@ export class ItemListComponent {
   }
 
   protected openNew(): void {
+    this.formError.set(null);
     this.merge({ modal: 'new-item' });
   }
 
   protected closeModal(): void {
+    this.formError.set(null);
     this.merge({ modal: null });
   }
 
-  protected createItem(draft: Partial<Item>): void {
-    this.items.update((rows) => [
-      {
-        id: `itm-new-${rows.length + 1}`,
-        sku: draft.sku ?? 'SKU-NEW',
-        name: draft.name ?? 'Untitled item',
+  /**
+   * Creates through `POST /api/items`. A duplicate SKU comes back as a 400 with
+   * a `sku` field error, which is shown in the modal so the entry is not lost.
+   */
+  protected async createItem(draft: Partial<Item>): Promise<void> {
+    this.formError.set(null);
+    this.notice.set(null);
+
+    if (IS_PREVIEW) {
+      this.items.update((rows) => [
+        {
+          id: `itm-preview-${rows.length + 1}`,
+          sku: draft.sku ?? 'SKU-NEW',
+          name: draft.name ?? 'Untitled item',
+          unit: draft.unit ?? 'ea',
+          reorderAt: draft.reorderAt ?? 0,
+          description: draft.description,
+          totalQty: 0,
+        },
+        ...rows,
+      ]);
+      this.notice.set(`${draft.name} added to the catalogue.`);
+      this.closeModal();
+      return;
+    }
+
+    try {
+      const created = await this.itemsApi.create({
+        sku: draft.sku ?? '',
+        name: draft.name ?? '',
         unit: draft.unit ?? 'ea',
         reorderAt: draft.reorderAt ?? 0,
         description: draft.description,
-        totalQty: 0,
-      },
-      ...rows,
-    ]);
-    this.notice.set(`${draft.name} added to the catalogue.`);
-    this.closeModal();
+      });
+      this.notice.set(`${created.name} added to the catalogue.`);
+      this.closeModal();
+      await this.load();
+    } catch (err) {
+      this.formError.set(skuMessage(err));
+    }
   }
 
   private merge(queryParams: Record<string, string | null>, replaceUrl = false): void {
@@ -157,4 +214,16 @@ export class ItemListComponent {
       replaceUrl,
     });
   }
+}
+
+function messageOf(err: unknown): string {
+  return err instanceof Error ? err.message : 'Something went wrong.';
+}
+
+/** Turns the API's `{field:'sku', message:'must be unique'}` into readable copy. */
+function skuMessage(err: unknown): string {
+  if (err instanceof ApiRequestError && err.fieldError('sku')) {
+    return 'That SKU is already in use. Every item needs a unique SKU.';
+  }
+  return messageOf(err);
 }

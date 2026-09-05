@@ -1,6 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ReportsApi } from '../../core/api/reports-api.service';
 import { LowStockRow } from '../../core/models';
+import { IS_PREVIEW } from '../../core/preview';
+import { PREVIEW_LOW_STOCK } from '../../core/preview-fixtures';
 
 @Component({
   selector: 'app-low-stock',
@@ -9,17 +19,37 @@ import { LowStockRow } from '../../core/models';
   styleUrl: './low-stock.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LowStockComponent {
-  /** Backend-owned data: items where totalQty <= reorderAt, ordered by shortfall. */
-  readonly rows = signal<LowStockRow[]>([
-    { id: 'itm-1007', sku: 'SKU-1007', name: 'Thermal Labels 4x6', unit: 'pack', reorderAt: 12, totalQty: 0 },
-    { id: 'itm-1002', sku: 'SKU-1002', name: 'Hex Bolt M8 x 40', unit: 'box', reorderAt: 25, totalQty: 12 },
-    { id: 'itm-1005', sku: 'SKU-1005', name: 'Pallet Wrap 500mm', unit: 'roll', reorderAt: 15, totalQty: 4 },
-    { id: 'itm-1003', sku: 'SKU-1003', name: 'Nitrile Gloves (L)', unit: 'box', reorderAt: 30, totalQty: 30 },
-  ]);
+export class LowStockComponent implements OnInit {
+  private readonly reportsApi = inject(ReportsApi);
 
-  protected readonly loading = signal(false);
+  /**
+   * `GET /api/reports/low-stock` — items where `totalQty <= reorderAt`.
+   * Items with no stock rows at all are included by the API (0 on hand is the
+   * most urgent case), so this list is not just "items that have moved".
+   */
+  readonly rows = signal<LowStockRow[]>(IS_PREVIEW ? PREVIEW_LOW_STOCK : []);
+
+  protected readonly loading = signal(!IS_PREVIEW);
   protected readonly error = signal<string | null>(null);
+
+  ngOnInit(): void {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    if (IS_PREVIEW) {
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      this.rows.set(await this.reportsApi.lowStock());
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   protected readonly sorted = computed<LowStockRow[]>(() =>
     [...this.rows()].sort(

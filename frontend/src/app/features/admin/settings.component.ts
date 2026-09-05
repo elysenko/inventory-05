@@ -1,6 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { AdminApi } from '../../core/api/admin-api.service';
 import { AdminSetting } from '../../core/models';
+import { IS_PREVIEW } from '../../core/preview';
+import { PREVIEW_SETTINGS } from '../../core/preview-fixtures';
 
 interface ServiceCard {
   service: 'postgresql' | 'minio';
@@ -15,19 +25,19 @@ interface ServiceCard {
   styleUrl: './settings.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminSettingsComponent {
+export class AdminSettingsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly adminApi = inject(AdminApi);
 
-  /** Backend-owned data: known service keys with masked values and a configured flag. */
-  readonly settings = signal<AdminSetting[]>([
-    { key: 'DATABASE_URL', service: 'postgresql', label: 'Connection string', value: 'postgresql://stockroom:••••••••@app-db:5432/stockroom', configured: true, secret: true },
-    { key: 'MINIO_ENDPOINT', service: 'minio', label: 'Endpoint', value: 'http://minio:9000', configured: true, secret: false },
-    { key: 'MINIO_ACCESS_KEY', service: 'minio', label: 'Access key', value: 'stockroom-••••', configured: true, secret: true },
-    { key: 'MINIO_SECRET_KEY', service: 'minio', label: 'Secret key', value: '', configured: false, secret: true },
-    { key: 'MINIO_BUCKET', service: 'minio', label: 'Bucket', value: '', configured: false, secret: false },
-  ]);
+  /**
+   * `GET /api/admin/settings` — the live credential catalogue for the backing
+   * services. The API resolves a stored override first and the pod environment
+   * second, and masks every secret, so what lands here is the effective
+   * configuration of the running deployment.
+   */
+  readonly settings = signal<AdminSetting[]>(IS_PREVIEW ? PREVIEW_SETTINGS : []);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(!IS_PREVIEW);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
 
@@ -68,7 +78,31 @@ export class AdminSettingsComponent {
     return key as 'DATABASE_URL';
   }
 
-  protected save(service: 'postgresql' | 'minio'): void {
+  ngOnInit(): void {
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    if (IS_PREVIEW) {
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      this.settings.set(await this.adminApi.list());
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Something went wrong.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * Writes the entered overrides through `PATCH /api/admin/settings` and takes
+   * the API's re-read as the new truth, so the "Current:" hints always show
+   * what the server actually resolved (masked), never what was typed.
+   */
+  protected async save(service: 'postgresql' | 'minio'): Promise<void> {
     this.error.set(null);
     this.success.set(null);
     const values = this.form.getRawValue() as Record<string, string>;
@@ -79,21 +113,39 @@ export class AdminSettingsComponent {
       return;
     }
 
-    this.settings.update((rows) =>
-      rows.map((row) =>
-        changed.some((c) => c.key === row.key)
-          ? {
-              ...row,
-              configured: true,
-              value: row.secret ? maskValue(values[row.key]) : values[row.key].trim(),
-            }
-          : row,
-      ),
-    );
-    changed.forEach((setting) => this.form.patchValue({ [setting.key]: '' }));
-    this.success.set(
-      `${changed.length} ${changed.length === 1 ? 'credential' : 'credentials'} saved for ${service}.`,
-    );
+    if (IS_PREVIEW) {
+      this.settings.update((rows) =>
+        rows.map((row) =>
+          changed.some((c) => c.key === row.key)
+            ? {
+                ...row,
+                configured: true,
+                value: row.secret ? maskValue(values[row.key]) : values[row.key].trim(),
+              }
+            : row,
+        ),
+      );
+      changed.forEach((setting) => this.form.patchValue({ [setting.key]: '' }));
+      this.success.set(
+        `${changed.length} ${changed.length === 1 ? 'credential' : 'credentials'} saved for ${service}.`,
+      );
+      return;
+    }
+
+    const payload: Record<string, string> = {};
+    changed.forEach((setting) => {
+      payload[setting.key] = values[setting.key].trim();
+    });
+
+    try {
+      this.settings.set(await this.adminApi.save(payload));
+      changed.forEach((setting) => this.form.patchValue({ [setting.key]: '' }));
+      this.success.set(
+        `${changed.length} ${changed.length === 1 ? 'credential' : 'credentials'} saved for ${service}.`,
+      );
+    } catch (err) {
+      this.error.set(err instanceof Error ? err.message : 'Something went wrong.');
+    }
   }
 }
 

@@ -93,6 +93,7 @@
   <app-location-form-modal
     [location]="modalName() === 'edit-location' ? editing() : null"
     [takenNames]="takenNames()"
+    [serverError]="formError()"
     (dismiss)="closeModal()"
     (save)="saveLocation($event)"
   />

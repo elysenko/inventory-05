@@ -112,6 +112,7 @@
   <app-item-form-modal
     [item]="null"
     [takenSkus]="takenSkus()"
+    [serverError]="formError()"
     (dismiss)="closeModal()"
     (save)="createItem($event)"
   />

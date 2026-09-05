@@ -38,6 +38,15 @@ export class ItemFormModalComponent {
 
   protected readonly units = ['ea', 'box', 'roll', 'pack', 'bag', 'kg', 'm'];
 
+  /**
+   * Message returned by the API for this form (for example a duplicate SKU
+   * rejected as a 400). Rendered in the modal's alert so the typed values stay
+   * on screen instead of the dialog closing on a failed save.
+   */
+  @Input() set serverError(value: string | null) {
+    this.skuError.set(value);
+  }
+
   @Input() set item(value: Item | null) {
     this.editing.set(!!value);
     if (value) {

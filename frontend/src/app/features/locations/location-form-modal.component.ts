@@ -33,6 +33,11 @@ export class LocationFormModalComponent {
     zone: ['', [Validators.required, Validators.maxLength(4)]],
   });
 
+  /** API-reported failure for this form (duplicate name, delete conflict, …). */
+  @Input() set serverError(value: string | null) {
+    this.nameError.set(value);
+  }
+
   @Input() set location(value: Location | null) {
     this.editing.set(!!value);
     if (value) {

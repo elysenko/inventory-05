@@ -1,13 +1,27 @@
 /**
  * Namespaced browser storage.
  *
- * Mockups are served many-per-origin at `/<mockup_id>/` and web storage is
- * origin-scoped (not path-scoped), so every key is prefixed with the first URL
- * path segment. In production the first segment is empty and the prefix falls
+ * Mockups and preview builds are served many-per-origin at `/<deployment_id>/`
+ * and web storage is origin-scoped (not path-scoped), so every key is prefixed
+ * with the app's own mount point.
+ *
+ * The prefix comes from `<base href>` — which the build stamps and the router
+ * already treats as the app root — and NOT from the current URL. A per-URL
+ * prefix would namespace `/items` and `/locations` separately, so reloading on
+ * any route other than the one you signed in on would lose the token and bounce
+ * you to /login. When the app is mounted at the origin root the prefix falls
  * back to `app`.
  */
-const NS =
-  (typeof location !== 'undefined' && location.pathname.split('/')[1]) || 'app';
+function currentNamespace(): string {
+  if (typeof document === 'undefined') {
+    return 'app';
+  }
+  const href = document.querySelector('base')?.getAttribute('href') ?? '/';
+  const path = href.replace(/^[a-z]+:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '');
+  return path || 'app';
+}
+
+const NS = currentNamespace();
 
 export const nsKey = (key: string): string => `${NS}:${key}`;
 

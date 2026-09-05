@@ -179,5 +179,10 @@
 </div>
 
 @if (modalName() === 'edit-item') {
-  <app-item-form-modal [item]="item()" (dismiss)="closeModal()" (save)="saveItem($event)" />
+  <app-item-form-modal
+    [item]="item()"
+    [serverError]="formError()"
+    (dismiss)="closeModal()"
+    (save)="saveItem($event)"
+  />
 }

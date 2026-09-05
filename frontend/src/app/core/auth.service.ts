@@ -143,12 +143,40 @@ export class AuthService {
     this.setSession(res.user, res.accessToken);
   }
 
-  logout(): void {
+  /**
+   * Drops the stored session without navigating. Used by `authInterceptor`
+   * when the API rejects a token as expired, where the redirect (with a
+   * returnUrl) is the interceptor's job.
+   */
+  clearSession(): void {
     remove(USER_KEY);
     remove(TOKEN_KEY);
     this.user.set(null);
     this.token.set(null);
+  }
+
+  logout(): void {
+    this.clearSession();
     void this.router.navigate(['/login']);
+  }
+
+  /**
+   * Re-reads the principal from `GET /api/auth/me`, so a role change on the
+   * server shows up without forcing a fresh sign-in. Any failure is swallowed:
+   * a 401 is already handled by the interceptor, and a transient network error
+   * must not eject a user who is holding a valid token.
+   */
+  async refresh(): Promise<void> {
+    if (IS_PREVIEW || !this.token()) {
+      return;
+    }
+    try {
+      const user = await firstValueFrom(this.http.get<User>('/api/auth/me'));
+      write(USER_KEY, user);
+      this.user.set(user);
+    } catch {
+      /* interceptor owns the 401 path; anything else keeps the cached session */
+    }
   }
 
   /** Preview-only: seeds a signed-in session without any credentials. */
