@@ -37,10 +37,7 @@
             "styles": [
               "src/styles.css"
             ],
-            "scripts": [],
-            "define": {
-              "COLOSSUS_PREVIEW": "false"
-            }
+            "scripts": []
           },
           "configurations": {
             "production": {
@@ -70,32 +67,6 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
-            },
-            "mockup": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "700kB",
-                  "maximumError": "1.5MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "12kB"
-                }
-              ],
-              "outputHashing": "all",
-              "optimization": {
-                "scripts": true,
-                "styles": {
-                  "minify": true,
-                  "inlineCritical": false
-                },
-                "fonts": true
-              },
-              "define": {
-                "COLOSSUS_PREVIEW": "true"
-              }
             }
           },
           "defaultConfiguration": "production"

@@ -12,8 +12,6 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ItemsApi } from '../../core/api/items-api.service';
 import { MovementsApi } from '../../core/api/movements-api.service';
 import { Item, Movement, MovementType } from '../../core/models';
-import { IS_PREVIEW } from '../../core/preview';
-import { PREVIEW_ITEMS, PREVIEW_MOVEMENTS } from '../../core/preview-fixtures';
 
 const PAGE_SIZE = 8;
 
@@ -35,12 +33,12 @@ export class MovementAuditComponent implements OnInit {
   readonly movements = signal<Movement[]>([]);
 
   /** `GET /api/items` — labels for the item filter. */
-  readonly items = signal<Item[]>(IS_PREVIEW ? PREVIEW_ITEMS : []);
+  readonly items = signal<Item[]>([]);
 
   /** Row count for the active filters, reported by the API, not by the page length. */
   private readonly totalCount = signal(0);
 
-  protected readonly loading = signal(!IS_PREVIEW);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
   protected readonly filterItem = signal('');
@@ -71,9 +69,6 @@ export class MovementAuditComponent implements OnInit {
   }
 
   private async loadItems(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     try {
       this.items.set(await this.itemsApi.list());
     } catch {
@@ -82,21 +77,6 @@ export class MovementAuditComponent implements OnInit {
   }
 
   private async load(): Promise<void> {
-    if (IS_PREVIEW) {
-      const rows = PREVIEW_MOVEMENTS.filter((movement) => {
-        if (this.filterItem() && movement.itemId !== this.filterItem()) return false;
-        if (this.filterType() && movement.type !== this.filterType()) return false;
-        const day = movement.createdAt.slice(0, 10);
-        if (this.filterFrom() && day < this.filterFrom()) return false;
-        if (this.filterTo() && day > this.filterTo()) return false;
-        return true;
-      });
-      this.totalCount.set(rows.length);
-      const start = (Math.max(1, this.pageNum()) - 1) * PAGE_SIZE;
-      this.movements.set(rows.slice(start, start + PAGE_SIZE));
-      this.loading.set(false);
-      return;
-    }
 
     this.loading.set(true);
     this.error.set(null);

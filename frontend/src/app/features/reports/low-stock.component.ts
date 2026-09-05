@@ -9,8 +9,6 @@ import {
 import { RouterLink } from '@angular/router';
 import { ReportsApi } from '../../core/api/reports-api.service';
 import { LowStockRow } from '../../core/models';
-import { IS_PREVIEW } from '../../core/preview';
-import { PREVIEW_LOW_STOCK } from '../../core/preview-fixtures';
 
 @Component({
   selector: 'app-low-stock',
@@ -27,9 +25,9 @@ export class LowStockComponent implements OnInit {
    * Items with no stock rows at all are included by the API (0 on hand is the
    * most urgent case), so this list is not just "items that have moved".
    */
-  readonly rows = signal<LowStockRow[]>(IS_PREVIEW ? PREVIEW_LOW_STOCK : []);
+  readonly rows = signal<LowStockRow[]>([]);
 
-  protected readonly loading = signal(!IS_PREVIEW);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
@@ -37,9 +35,6 @@ export class LowStockComponent implements OnInit {
   }
 
   private async load(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     this.loading.set(true);
     this.error.set(null);
     try {

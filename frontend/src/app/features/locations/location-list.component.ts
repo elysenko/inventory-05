@@ -12,8 +12,6 @@ import { ApiRequestError } from '../../core/api/api-client.service';
 import { LocationsApi } from '../../core/api/locations-api.service';
 import { AuthService } from '../../core/auth.service';
 import { Location } from '../../core/models';
-import { IS_PREVIEW } from '../../core/preview';
-import { PREVIEW_LOCATIONS } from '../../core/preview-fixtures';
 import { LocationFormModalComponent } from './location-form-modal.component';
 
 @Component({
@@ -30,9 +28,9 @@ export class LocationListComponent implements OnInit {
   protected readonly auth = inject(AuthService);
 
   /** `GET /api/locations` — zones with their rolled-up occupancy. */
-  readonly locations = signal<Location[]>(IS_PREVIEW ? PREVIEW_LOCATIONS : []);
+  readonly locations = signal<Location[]>([]);
 
-  protected readonly loading = signal(!IS_PREVIEW);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
   protected readonly formError = signal<string | null>(null);
@@ -53,9 +51,6 @@ export class LocationListComponent implements OnInit {
   }
 
   private async load(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     this.loading.set(true);
     try {
       this.locations.set(await this.locationsApi.list());
@@ -98,26 +93,6 @@ export class LocationListComponent implements OnInit {
     this.formError.set(null);
     this.notice.set(null);
 
-    if (IS_PREVIEW) {
-      this.locations.update((rows) =>
-        target
-          ? rows.map((row) => (row.id === target.id ? { ...row, ...draft } : row))
-          : [
-              ...rows,
-              {
-                id: `loc-preview-${rows.length + 1}`,
-                name: draft.name ?? 'New location',
-                zone: draft.zone ?? '—',
-                itemCount: 0,
-                totalQty: 0,
-              },
-            ],
-      );
-      this.notice.set(target ? `${draft.name} updated.` : `${draft.name} added.`);
-      this.closeModal();
-      return;
-    }
-
     const payload = { name: draft.name ?? '', zone: draft.zone ?? '' };
     try {
       if (target) {
@@ -146,18 +121,6 @@ export class LocationListComponent implements OnInit {
   protected async remove(location: Location): Promise<void> {
     this.error.set(null);
     this.notice.set(null);
-
-    if (IS_PREVIEW) {
-      if (location.totalQty > 0) {
-        this.error.set(
-          `${location.name} still holds ${location.totalQty} units. Move the stock out before deleting it.`,
-        );
-        return;
-      }
-      this.locations.update((rows) => rows.filter((row) => row.id !== location.id));
-      this.notice.set(`${location.name} removed.`);
-      return;
-    }
 
     try {
       await this.locationsApi.remove(location.id);

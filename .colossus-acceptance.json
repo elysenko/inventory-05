@@ -1,11 +1,15 @@
 {
   "ready_testid": "app-ready",
   "expect_text": [
-    "StockRoom"
+    "stockroom",
+    "sign in to stockroom",
+    "track stock across every zone"
   ],
   "reject_signatures": [
     "home-title\">Users<",
     "Loading...",
-    "Failed to load users."
+    "Failed to load users.",
+    "Skip login — Demo Mode",
+    "Welcome to Angular"
   ]
 }

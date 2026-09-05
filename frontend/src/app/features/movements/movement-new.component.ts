@@ -14,12 +14,6 @@ import { ItemsApi } from '../../core/api/items-api.service';
 import { LocationsApi } from '../../core/api/locations-api.service';
 import { MovementsApi } from '../../core/api/movements-api.service';
 import { Item, Location, MovementType, StockLevelRow } from '../../core/models';
-import { IS_PREVIEW } from '../../core/preview';
-import {
-  PREVIEW_ITEMS,
-  PREVIEW_LOCATIONS,
-  PREVIEW_STOCK_LEVELS,
-} from '../../core/preview-fixtures';
 
 @Component({
   selector: 'app-movement-new',
@@ -35,24 +29,24 @@ export class MovementNewComponent implements OnInit {
   private readonly movementsApi = inject(MovementsApi);
 
   /** `GET /api/items` — populates the item select. */
-  readonly items = signal<Item[]>(IS_PREVIEW ? PREVIEW_ITEMS : []);
+  readonly items = signal<Item[]>([]);
 
   /** `GET /api/locations` — populates the source/destination selects. */
-  readonly locations = signal<Location[]>(IS_PREVIEW ? PREVIEW_LOCATIONS : []);
+  readonly locations = signal<Location[]>([]);
 
   /**
    * Per-location balances for the selected item, from `GET /api/items/:id`.
    * They drive the "available here" hint and the inline over-draw guard; the
    * authoritative check still happens server-side inside the transaction.
    */
-  readonly stockLevels = signal<StockLevelRow[]>(IS_PREVIEW ? PREVIEW_STOCK_LEVELS : []);
+  readonly stockLevels = signal<StockLevelRow[]>([]);
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
 
   /** Suppresses the local over-draw guard until real balances have arrived. */
-  private readonly levelsLoaded = signal(IS_PREVIEW);
+  private readonly levelsLoaded = signal(false);
   private loadedFor = '';
 
   protected readonly types: { value: MovementType; label: string; hint: string }[] = [
@@ -87,9 +81,6 @@ export class MovementNewComponent implements OnInit {
 
   /** Catalogue and locations are independent reads, so they go out together. */
   private async loadReferenceData(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     try {
       const [items, locations] = await Promise.all([
         this.itemsApi.list(),
@@ -108,9 +99,6 @@ export class MovementNewComponent implements OnInit {
 
   /** Refetches balances whenever the chosen item changes. */
   private async syncStockLevels(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     const itemId = this.form.controls.itemId.value;
     if (!itemId || itemId === this.loadedFor) {
       return;
@@ -205,20 +193,16 @@ export class MovementNewComponent implements OnInit {
 
     this.submitting.set(true);
     try {
-      if (IS_PREVIEW) {
-        this.applyPreviewMovement(value.itemId, value.type, value.fromLocId, value.toLocId, value.qty);
-      } else {
-        // The API applies the debit/credit and writes the audit row in one
-        // transaction, so a rejected draw leaves the balance untouched.
-        await this.movementsApi.create({
-          type: value.type,
-          itemId: value.itemId,
-          fromLocId: value.fromLocId || undefined,
-          toLocId: value.toLocId || undefined,
-          qty: Number(value.qty),
-          note: value.note.trim() || undefined,
-        });
-      }
+      // The API applies the debit/credit and writes the audit row in one
+      // transaction, so a rejected draw leaves the balance untouched.
+      await this.movementsApi.create({
+        type: value.type,
+        itemId: value.itemId,
+        fromLocId: value.fromLocId || undefined,
+        toLocId: value.toLocId || undefined,
+        qty: Number(value.qty),
+        note: value.note.trim() || undefined,
+      });
       this.success.set(
         `${value.type === 'IN' ? 'Received' : value.type === 'OUT' ? 'Issued' : 'Transferred'} ` +
           `${value.qty} ${item?.unit ?? ''} of ${item?.name ?? 'item'}.`,
@@ -236,9 +220,6 @@ export class MovementNewComponent implements OnInit {
 
   /** Pulls the new balances back so the next submit is checked against truth. */
   private async refreshAfterMovement(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     this.loadedFor = '';
     try {
       this.items.set(await this.itemsApi.list());
@@ -246,50 +227,6 @@ export class MovementNewComponent implements OnInit {
       /* the totals hint is cosmetic; a failed refresh must not blank the form */
     }
     await this.syncStockLevels();
-  }
-
-  /** Preview-only: mirrors the API's balance arithmetic so the mockup stays coherent. */
-  private applyPreviewMovement(
-    itemId: string,
-    type: MovementType,
-    fromLocId: string,
-    toLocId: string,
-    qty: number,
-  ): void {
-    this.stockLevels.update((rows) => {
-      let next = rows.map((row) =>
-        row.itemId === itemId && row.locationId === fromLocId && type !== 'IN'
-          ? { ...row, qty: row.qty - qty }
-          : row,
-      );
-      if (type !== 'OUT') {
-        const existing = next.find((r) => r.itemId === itemId && r.locationId === toLocId);
-        if (existing) {
-          next = next.map((r) => (r === existing ? { ...r, qty: r.qty + qty } : r));
-        } else {
-          const location = this.locations().find((l) => l.id === toLocId);
-          next = [
-            ...next,
-            {
-              id: `sl-preview-${next.length + 1}`,
-              itemId,
-              locationId: toLocId,
-              locationName: location?.name ?? 'Unknown',
-              zone: location?.zone ?? '—',
-              qty,
-            },
-          ];
-        }
-      }
-      return next;
-    });
-
-    const delta = type === 'IN' ? qty : type === 'OUT' ? -qty : 0;
-    if (delta !== 0) {
-      this.items.update((rows) =>
-        rows.map((row) => (row.id === itemId ? { ...row, totalQty: row.totalQty + delta } : row)),
-      );
-    }
   }
 
   protected invalid(control: 'itemId' | 'qty'): boolean {

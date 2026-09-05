@@ -5,8 +5,6 @@ import { ApiRequestError } from '../../core/api/api-client.service';
 import { ItemsApi } from '../../core/api/items-api.service';
 import { AuthService } from '../../core/auth.service';
 import { Item, ItemDetail, Movement, StockLevelRow } from '../../core/models';
-import { IS_PREVIEW } from '../../core/preview';
-import { PREVIEW_ITEM_DETAILS, PREVIEW_MOVEMENTS } from '../../core/preview-fixtures';
 import { ItemFormModalComponent } from './item-form-modal.component';
 
 /**
@@ -42,7 +40,7 @@ export class ItemDetailComponent {
   /** `GET /api/items/:id/movements` — history for this item only. */
   readonly movements = signal<Movement[]>([]);
 
-  protected readonly loading = signal(!IS_PREVIEW);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly formError = signal<string | null>(null);
 
@@ -70,15 +68,6 @@ export class ItemDetailComponent {
 
   private async load(): Promise<void> {
     const id = this.itemId();
-
-    if (IS_PREVIEW) {
-      const fixture =
-        PREVIEW_ITEM_DETAILS.find((row) => row.id === id) ?? PREVIEW_ITEM_DETAILS[0];
-      this.detail.set(fixture);
-      this.movements.set(PREVIEW_MOVEMENTS.filter((m) => m.itemId === fixture.id));
-      this.loading.set(false);
-      return;
-    }
 
     if (!id) {
       return;
@@ -152,12 +141,6 @@ export class ItemDetailComponent {
   protected async saveItem(draft: Partial<Item>): Promise<void> {
     this.formError.set(null);
     const current = this.item();
-
-    if (IS_PREVIEW) {
-      this.detail.set({ ...current, ...draft });
-      this.closeModal();
-      return;
-    }
 
     try {
       await this.itemsApi.update(current.id, {

@@ -9,7 +9,6 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 import { filter } from 'rxjs';
 import { AuthService } from './core/auth.service';
 import { Role } from './core/models';
-import { IS_PREVIEW } from './core/preview';
 
 interface NavLink {
   path: string;
@@ -29,10 +28,12 @@ export class AppComponent {
   private readonly router = inject(Router);
   protected readonly auth = inject(AuthService);
 
-  /** Preview-only role switcher: shows how navigation changes per role. */
-  protected readonly previewRoles: Role[] | null = IS_PREVIEW
-    ? ['USER', 'MANAGER', 'ADMIN']
-    : null;
+  /**
+   * Always null: the signed-in role comes from the JWT and is never switchable
+   * from the client. Kept because the shell template guards the (never-rendered)
+   * role switcher on it.
+   */
+  protected readonly previewRoles: Role[] | null = null;
 
   protected readonly url = signal(this.router.url);
   protected readonly drawerOpen = signal(false);
@@ -81,8 +82,9 @@ export class AppComponent {
     this.drawerOpen.update((open) => !open);
   }
 
-  protected onPreviewRole(event: Event): void {
-    this.auth.setPreviewRole((event.target as HTMLSelectElement).value as Role);
+  /** Unreachable: `previewRoles` is null, so the switcher never renders. */
+  protected onPreviewRole(_event: Event): void {
+    /* the role is server-issued; there is nothing to switch */
   }
 
   protected initials(): string {

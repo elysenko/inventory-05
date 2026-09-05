@@ -8,7 +8,6 @@ import {
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { IS_PREVIEW } from '../../core/preview';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -28,9 +27,11 @@ export class SignupComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  protected readonly previewShortcut: string | null = IS_PREVIEW
-    ? 'Skip login — Demo Mode'
-    : null;
+  /**
+   * Always null: there is no credential-free sign-in. Kept because the locked
+   * template guards the (never-rendered) shortcut button on it.
+   */
+  protected readonly previewShortcut: string | null = null;
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -68,9 +69,9 @@ export class SignupComponent {
     }
   }
 
+  /** Unreachable: `previewShortcut` is null, so the button never renders. */
   protected demoSignIn(): void {
-    this.auth.previewSignIn('ADMIN');
-    void this.router.navigateByUrl('/items');
+    /* every session is established by POST /api/auth/{login,signup} */
   }
 
   protected invalid(control: 'name' | 'email' | 'password' | 'confirm'): boolean {

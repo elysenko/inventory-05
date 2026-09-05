@@ -9,8 +9,6 @@ import {
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/api/admin-api.service';
 import { AdminSetting } from '../../core/models';
-import { IS_PREVIEW } from '../../core/preview';
-import { PREVIEW_SETTINGS } from '../../core/preview-fixtures';
 
 interface ServiceCard {
   service: 'postgresql' | 'minio';
@@ -35,9 +33,9 @@ export class AdminSettingsComponent implements OnInit {
    * second, and masks every secret, so what lands here is the effective
    * configuration of the running deployment.
    */
-  readonly settings = signal<AdminSetting[]>(IS_PREVIEW ? PREVIEW_SETTINGS : []);
+  readonly settings = signal<AdminSetting[]>([]);
 
-  protected readonly loading = signal(!IS_PREVIEW);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
 
@@ -83,9 +81,6 @@ export class AdminSettingsComponent implements OnInit {
   }
 
   private async load(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     this.loading.set(true);
     this.error.set(null);
     try {
@@ -110,25 +105,6 @@ export class AdminSettingsComponent implements OnInit {
 
     if (changed.length === 0) {
       this.error.set('Enter at least one value before saving.');
-      return;
-    }
-
-    if (IS_PREVIEW) {
-      this.settings.update((rows) =>
-        rows.map((row) =>
-          changed.some((c) => c.key === row.key)
-            ? {
-                ...row,
-                configured: true,
-                value: row.secret ? maskValue(values[row.key]) : values[row.key].trim(),
-              }
-            : row,
-        ),
-      );
-      changed.forEach((setting) => this.form.patchValue({ [setting.key]: '' }));
-      this.success.set(
-        `${changed.length} ${changed.length === 1 ? 'credential' : 'credentials'} saved for ${service}.`,
-      );
       return;
     }
 

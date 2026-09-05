@@ -12,8 +12,6 @@ import { ApiRequestError } from '../../core/api/api-client.service';
 import { ItemsApi } from '../../core/api/items-api.service';
 import { AuthService } from '../../core/auth.service';
 import { Item } from '../../core/models';
-import { IS_PREVIEW } from '../../core/preview';
-import { PREVIEW_ITEMS } from '../../core/preview-fixtures';
 import { ItemFormModalComponent } from './item-form-modal.component';
 
 type SortKey = 'sku' | 'name' | 'unit' | 'reorderAt' | 'totalQty';
@@ -32,9 +30,9 @@ export class ItemListComponent implements OnInit {
   protected readonly auth = inject(AuthService);
 
   /** Live catalogue from `GET /api/items`, including each item's rolled-up on-hand total. */
-  readonly items = signal<Item[]>(IS_PREVIEW ? PREVIEW_ITEMS : []);
+  readonly items = signal<Item[]>([]);
 
-  protected readonly loading = signal(!IS_PREVIEW);
+  protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
   /** Surfaced inside the create modal so a rejected save keeps the typed values. */
@@ -67,9 +65,6 @@ export class ItemListComponent implements OnInit {
    * request per keystroke.
    */
   private async load(): Promise<void> {
-    if (IS_PREVIEW) {
-      return;
-    }
     this.loading.set(true);
     this.error.set(null);
     try {
@@ -171,24 +166,6 @@ export class ItemListComponent implements OnInit {
   protected async createItem(draft: Partial<Item>): Promise<void> {
     this.formError.set(null);
     this.notice.set(null);
-
-    if (IS_PREVIEW) {
-      this.items.update((rows) => [
-        {
-          id: `itm-preview-${rows.length + 1}`,
-          sku: draft.sku ?? 'SKU-NEW',
-          name: draft.name ?? 'Untitled item',
-          unit: draft.unit ?? 'ea',
-          reorderAt: draft.reorderAt ?? 0,
-          description: draft.description,
-          totalQty: 0,
-        },
-        ...rows,
-      ]);
-      this.notice.set(`${draft.name} added to the catalogue.`);
-      this.closeModal();
-      return;
-    }
 
     try {
       const created = await this.itemsApi.create({

@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
-import { IS_PREVIEW } from '../../core/preview';
 
 @Component({
   selector: 'app-login',
@@ -17,10 +16,11 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  /** Preview-only shortcut. Held in TypeScript so it vanishes from production builds. */
-  protected readonly previewShortcut: string | null = IS_PREVIEW
-    ? 'Skip login — Demo Mode'
-    : null;
+  /**
+   * Always null: there is no credential-free sign-in. Kept because the locked
+   * template guards the (never-rendered) shortcut button on it.
+   */
+  protected readonly previewShortcut: string | null = null;
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -53,9 +53,9 @@ export class LoginComponent {
     }
   }
 
+  /** Unreachable: `previewShortcut` is null, so the button never renders. */
   protected demoSignIn(): void {
-    this.auth.previewSignIn('ADMIN');
-    void this.router.navigateByUrl('/items');
+    /* every session is established by POST /api/auth/{login,signup} */
   }
 
   protected invalid(control: 'email' | 'password'): boolean {
